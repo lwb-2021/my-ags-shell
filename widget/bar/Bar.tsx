@@ -9,35 +9,14 @@ import Mpris from "gi://AstalMpris"
 import AstalTray from "gi://AstalTray"
 import AstalNetwork from "gi://AstalNetwork"
 import AstalBluetooth from "gi://AstalBluetooth"
-import AstalHyprland from "gi://AstalHyprland"
 import AstalWp from "gi://AstalWp"
 import { createPoll } from "ags/time"
 import lang from "../lang"
-import ControlPopup from "./ControlPopup"
 import { search_icon } from "../utils"
 
 function Logo() {
-  return <image pixel_size={24} class="logo" icon_name={GLib.get_os_info("LOGO") || "missing-symbolic"} />
-}
-
-function Workspaces() {
-  const hyprland = AstalHyprland.get_default()
-  // const workspaces = createBinding(hyprland, "workspaces")
-  const focusedWorkspace = createBinding(hyprland, "focusedWorkspace")
-  return <box class="workspaces">
-    {
-      [...new Array(10).keys()].map((workspace) => (
-        <label
-          label={(workspace + 1).toString()}
-          class="workspace"
-          css={focusedWorkspace.as(focusedWorkspace =>
-          ("color: " +
-            ((focusedWorkspace.id === workspace + 1) ? "purple" : "gray") +
-            ";")
-          )}
-        />
-      ))
-    }
+  return <box class="logo">
+    <image pixel_size={24} class="logo" icon_name={GLib.get_os_info("LOGO") || "missing-symbolic"} />
   </box>
 }
 
@@ -46,14 +25,17 @@ function Media() {
   const players = createBinding(mpris, "players")
   const [index, set_index] = createState(0);
   const player = createComputed([players, index], (players, index) => players[index])
-  return <menubutton>
-    <label label={player.as(player => player.title + (player.artist ? " - " + player.artist : ""))} />
+
+  const ellipsis_therhold = 16
+
+  return <menubutton class="media">
+    <label label={player.as(player => player && player.title ? (player.title + (player.artist ? " - " + player.artist : "")) : lang["no-media"])} />
     <popover class="media-controller">
       <centerbox orientation={Gtk.Orientation.VERTICAL}>
         <box $type="start" orientation={Gtk.Orientation.VERTICAL}>
-          <label $type="start" class="title" label={player.as(player => player.title ?
-            (player.title.length > 20 ? player.title.slice(0, 20) + "..." : player.title) : lang["no-media"])} />
-          <label $type="end" class="artist" label={player.as(player => player.artist ? player.artist : lang["unknown"])} />
+          <label $type="start" class="title" label={player.as(player => player && player.title ?
+            (player.title.length > ellipsis_therhold ? player.title.slice(0, ellipsis_therhold) + "..." : player.title) : lang["no-media"])} />
+          <label $type="end" class="artist" label={player.as(player => player && player.artist ? player.artist : lang["unknown"])} />
         </box>
         <box orientation={Gtk.Orientation.HORIZONTAL} $type="center">
           <button $type="start" sensitive={index.as(index => index > 0)} onClicked={() => set_index(prev => prev - 1)}>
@@ -62,7 +44,9 @@ function Media() {
 
           <box hexpand $type="center" css={
             player.as(player =>
-              `background-image: url(${player.cover_art});`
+              player ?
+                `background-image: url(${player.cover_art});`
+                : ""
             )
           } />
           <button $type="end" sensitive={index.as(index => index < mpris.players.length - 1)} onClicked={() => set_index(prev => prev + 1)}>
@@ -75,7 +59,7 @@ function Media() {
             <button $type="start"></button>
             <button $type="center"
               onClicked={() => mpris.get_players()[index.get()].play_pause()}
-              label={player.as(player => player.can_pause ? "" : "")}
+              label={player.as(player => player && player.can_pause ? "" : "")}
             ></button>
             <button $type="end"></button>
           </box>
@@ -137,26 +121,29 @@ function Network() {
   const network = AstalNetwork.get_default()
   const wifi = createBinding(network, "wifi")
   const wired = createBinding(network, "wired")
-  return <box
-    class="network"
-    visible={wifi.as(Boolean) || wired.as(Boolean)}
-  >
-    <image pixel_size={24} visible={wifi.as(Boolean)} icon_name={wifi.get() ? wifi.as(wifi => ("nm-signal-" + String((wifi.strength - wifi.strength % 25) !== 0 ? (wifi.strength - wifi.strength % 25) : "00"))) : undefined} />
-    <image pixel_size={24} visible={wired.as(Boolean)} icon_name={wired.get() ? wired.as(wired => wired.iconName) : undefined} />
-  </box>
+  return <box>
+    <image
+      class="indicator"
+      pixel_size={24}
+      visible={wifi.as(Boolean)}
+      icon_name={
+        wifi.as(wifi => wifi ? ("nm-signal-" + String((wifi.strength - wifi.strength % 25) !== 0 ? (wifi.strength - wifi.strength % 25) : "00")) : "")
+      } />
+    <image pixel_size={24} class="indicator" visible={wired.as(Boolean)} icon_name={wired.as(wired => wired ? wired.iconName : "")} />
+  </box >
 
 }
 
 function Bluetooth() {
   const bluetooth = AstalBluetooth.get_default()
   const active = createBinding(bluetooth, "is_connected")
-  return <image pixel_size={24} class="bluetooth" icon_name={active.as(active => (active ? "bluetooth-active" : "bluetooth"))} />
+  return <image pixel_size={24} class="indicator" icon_name={active.as(active => (active ? "bluetooth-active" : "bluetooth"))} />
 }
 
 function Audio() {
   const wp = AstalWp.get_default()!
   const audio = createBinding(wp, "audio")
-  return <image pixel_size={24} class="audio" icon_name={audio.as(audio => {
+  return <image pixel_size={24} class="indicator" icon_name={audio.as(audio => {
     if (audio.default_speaker.volume == 0) {
       return "audio-volume-off"
     } else if (0 < audio.default_speaker.volume && audio.default_speaker.volume < 30) {
@@ -175,7 +162,7 @@ function Audio() {
 
 function Battery() {
   const bat = AstalBattery.get_default()
-  return <box class="battery"
+  return <box class="indicator"
     visible={createBinding(bat, "isPresent")}>
     <image icon_name={createBinding(bat, "batteryIconName")} />
     <label label={createBinding(bat, "percentage").as(p =>
@@ -184,44 +171,34 @@ function Battery() {
   </box>
 }
 
-function Time({ format = "%H:%M" }) {
+function Time({ format = "%H:%M:%S" }) {
   const time = createPoll("", 1000, () =>
-    GLib.DateTime.new_now_local().format(format)!)
-  return <label
-    class="time"
-    label={time}
-  />
-}
+    GLib.DateTime.new_now(GLib.TimeZone.new_identifier("UTC-8")).format(format)!)
+  return <box class="time">
+    <label
+      label={time}
+    />
 
-function Indicators() {
-  let popover_visible = createState(false)
-  let mode = createState(0)
-  return <menubutton class="indicators">
-    <box>
-      <Network />
-      <Bluetooth />
-      <Audio />
-      <Battery />
-    </box>
-    <popover>
-      <ControlPopup mode={mode} />
-    </popover>
-
-  </menubutton>
+  </box>
 }
 
 function PowerMenu({ screen_visible }: { screen_visible: State<boolean> }) {
-  const [variable, setter] = screen_visible
+  const [_, setter] = screen_visible
   return <button class="power-menu"
     onClicked={() => { setter(prev => !prev) }}
   >
     <image pixel_size={24} icon_name="system-shutdown" />
   </button>
 }
+function PanelButton({ panel_visible }: { panel_visible: State<boolean> }) {
+  const [_, setter] = panel_visible
+  return <button class="panel-button" onClicked={() => { setter(prev => !prev) }}>
+    <image pixel_size={24} icon_name="sidebar" />
+  </button>
+}
 
-export default function Bar(monitor: Gdk.Monitor, screen_visible: State<boolean>) {
+export default function Bar(monitor: Gdk.Monitor, screen_visible: State<boolean>, panel_visible: State<boolean>) {
   const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
-  const hyprland = AstalHyprland.get_default()
   return <window
     visible
     class="bar"
@@ -231,19 +208,26 @@ export default function Bar(monitor: Gdk.Monitor, screen_visible: State<boolean>
     exclusivity={Astal.Exclusivity.EXCLUSIVE}
     anchor={TOP | LEFT | RIGHT}
     application={app}
-    css={createComputed([createBinding(hyprland, "focused_workspace")], workspace => ((!workspace || workspace.clients.length !== 1) ? "border-radius: 16px;margin: 2px 2px 0;" : "border-radius: 0;margin: 0;"))}
   >
     <centerbox>
       <box $type="start">
         <Logo />
         {/* <Workspaces /> */}
+        {
+          // <PanelButton panel_visible={panel_visible} />
+        }
       </box>
       <box $type="center" >
         <Media />
       </box>
       <box $type="end">
         <Tray />
-        <Indicators />
+
+        <Network />
+        <Bluetooth />
+        <Audio />
+        <Battery />
+
         <Time />
         <PowerMenu screen_visible={screen_visible} />
       </box>

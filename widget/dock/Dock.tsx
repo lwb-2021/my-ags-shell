@@ -51,12 +51,15 @@ function AppLauncher() {
 
 export default function Dock(monitor: Gdk.Monitor, [dock_visible, set_dock_visible]: State<boolean>) {
     const { BOTTOM } = Astal.WindowAnchor;
+    const hyprland = AstalHyprland.get_default()
+    const clients = createBinding(hyprland, "clients")
     return <window
-        visible={true}
+        visible={dock_visible}
         class="dock"
         gdkmonitor={monitor}
         layer={Astal.Layer.TOP}
         exclusivity={Astal.Exclusivity.IGNORE}
+
 
         anchor={BOTTOM}
         application={app}
@@ -82,6 +85,7 @@ export default function Dock(monitor: Gdk.Monitor, [dock_visible, set_dock_visib
                             marginStart={0} marginEnd={4}
                             marginTop={8} marginBottom={8}
                             widthRequest={4}
+                            visible={clients.as(clients => clients.length > 0)}
                         />
                         <Tasks />
                         <box $type="end" hexpand></box>

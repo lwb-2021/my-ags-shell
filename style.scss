@@ -1,30 +1,44 @@
+@use "catppuccin.scss" as *;
+
 // https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
 $fg-color: #{"@theme_fg_color"};
-$bg-color: #{"@theme_bg_color"};
+/* $bg-color: #{"@theme_bg_color"}; */
+$bg-color: $crust;
 
 * {
   font-size: 14px;
 }
 
 window.bar {
-  background: $bg-color;
+  /* background: $bg-color; */
+  background-color: transparent;
   color: $fg-color;
   font-weight: bold;
   min-height: 32px;
 
   margin: 2px 2px 0;
-  border-radius: 16px;
   padding: 2px;
+
 
   * {
     border-radius: 16px;
-    margin: 0 4px;
+    margin: 0 2px;
+  }
+  .logo {
+    background-color: $bg-color;
+    padding: 0;
+  }
+  .media {
+    background-color: $bg-color;
+    margin-right: 8px;
   }
 
+
   .tray {
-    padding-left: 2px;
-    padding-right: 2px;
-    background-color: rgba($color: #FFFFFF, $alpha: 0.1);
+    padding: 0 8px;
+    /* background-color: rgba($color: #FFFFFF, $alpha: 0.1); */
+    background-color: $bg-color;
+
     border-radius: 16px;
 
     * {
@@ -37,11 +51,29 @@ window.bar {
     }
 
   }
+  .indicator {
+    background-color: $bg-color;
+    padding: 0 8px;
+  }
+
+  .time {
+    padding: 0 8px;
+    background-color: $bg-color;
+  }
+  .power-menu {
+    background-color: $bg-color;
+  }
+  .panel-button {
+    background-color: $bg-color;  
+    margin-left: 12px;
+    padding: 0 8px;
+  }
 
   button {
     border-radius: 16px;
     margin: 0;
     padding: 0 2px;
+    background-color: transparent;
   }
 
   .workspaces {
@@ -51,15 +83,14 @@ window.bar {
       font-size: 16px;
     }
   }
+  
 
-  .time {
-    margin: 0 8px;
-  }
 
   .media-controller {
     background-color: $bg-color;
     border-radius: 16px;
     margin: 4px;
+    margin-top: 24px;
     min-width: 360px;
     min-height: 240px;
 
@@ -86,41 +117,6 @@ window.bar {
     }
   }
 
-
-
-  .control-popup-main {
-    .title-box {
-      padding: 4px 10px;
-      margin: 2px 0;
-
-      button {
-        border-radius: 8px;
-      }
-    }
-
-    .content-box {
-      .connection-button {
-        margin-bottom: 4px;
-        padding-top: 6px;
-        padding-bottom: 6px;
-        background-color: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-      }
-
-      .audio-component {
-        margin-bottom: 4px;
-        padding-top: 6px;
-        padding-bottom: 6px;
-      }
-
-      button {
-        // font-size: 20px;
-        border-radius: 8px;
-        margin: 4px 0;
-
-      }
-    }
-  }
 
 }
 
@@ -159,6 +155,18 @@ window.dock {
   }
 
 
+}
+
+window.panel {
+  background-color: transparent;
+  min-width: 400px;
+  margin: 16px;
+
+  border-radius: 16px;
+
+  .content {
+    background-color: $bg-color;
+  }
 }
 
 window.screen-border-bottom {
